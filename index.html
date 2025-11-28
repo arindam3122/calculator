@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<title>Savings Calculator — Responsive</title>
+<title>Savings Calculator — Fully Updated</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -11,13 +11,11 @@
   --bg1:#dbeafe; --bg2:#e0f2fe; --accent:#2563eb; --card:rgba(255,255,255,0.95);
   --muted:#64748b; --green:#16a34a; --red:#ef4444; --soft:#f8fafc;
 }
-
 body{
   font-family:Inter,system-ui;
   margin:0;
   background:linear-gradient(135deg,var(--bg1),var(--bg2));
 }
-
 .wrap{max-width:1000px;margin:28px auto;padding:16px;}
 .card{
   background:var(--card);
@@ -25,7 +23,6 @@ body{
   padding:16px;
   box-shadow:0 10px 30px rgba(2,6,23,.08);
 }
-
 h1{
   text-align:center;
   margin:0 0 16px;
@@ -51,7 +48,6 @@ input,select{
   border:1px solid #e6eef8;
   font-size:14px;
 }
-
 .btn{
   padding:11px 14px;
   border-radius:10px;
@@ -71,15 +67,23 @@ input,select{
   border:none;
 }
 
+/* Edit/Delete buttons */
 .btn-edit{
   background:#f97316;
   color:white;
-  margin-right:10px; /* ADDED SPACING */
 }
-
 .btn-delete{
   background:#ef4444;
   color:white;
+}
+
+/* Force spacing between buttons on mobile */
+@media (max-width:520px){
+  td:last-child {
+    display:flex !important;
+    justify-content:center;
+    gap:12px !important;
+  }
 }
 
 /* Table */
@@ -105,13 +109,13 @@ tbody td{
 }
 
 /* Color-coded numbers */
-.credit { color:var(--green); font-weight:700; }
-.debit { color:var(--red); font-weight:700; }
-.total-positive { color:var(--green); font-weight:800; }
-.total-negative { color:var(--red); font-weight:800; }
-.total-zero { color:#6b7280; font-weight:700; }
+.credit{ color:var(--green); font-weight:700; }
+.debit{ color:var(--red); font-weight:700; }
+.total-positive{ color:var(--green); font-weight:800; }
+.total-negative{ color:var(--red); font-weight:800; }
+.total-zero{ color:#6b7280; font-weight:700; }
 
-/* Report box */
+/* Report */
 .report{
   margin-top:16px;
   padding:14px;
@@ -121,7 +125,7 @@ tbody td{
   font-size:14px;
 }
 
-/* Graph */
+/* Graph Panel */
 .graph-panel{
   margin-top:16px;
   padding:14px;
@@ -142,10 +146,7 @@ tbody td{
   background:var(--accent);
   color:white;
 }
-.chart-container{
-  position:relative;
-  height:300px;
-}
+.chart-container{position:relative;height:300px;}
 
 /* Modal */
 .modal-backdrop{
@@ -173,23 +174,8 @@ tbody td{
 @media(max-width:520px){
   .form-grid{grid-template-columns:1fr;}
   .btn-primary{grid-column:span 1;}
-  h1{font-size:20px;}
-  table{font-size:13px;}
   .chart-container{height:260px;}
 }
-/* Proper spacing between Edit and Delete on mobile */
-@media (max-width: 520px) {
-  td:last-child {
-    display: flex !important;
-    justify-content: center;
-    gap: 10px !important;
-  }
-
-  .btn-edit, .btn-delete {
-    margin-right: 0 !important; /* ensure gap handles spacing */
-  }
-}
-
 </style>
 </head>
 
@@ -200,7 +186,7 @@ tbody td{
 <h1>Monthly / Yearly Savings Calculator</h1>
 
 <!-- FORM -->
-<div class="form-grid" id="mainFormGrid">
+<div class="form-grid">
   <div class="field">
     <label>Date</label>
     <input id="dateInput" type="date">
@@ -224,7 +210,7 @@ tbody td{
   <button class="btn btn-primary" id="addBtn">Add Entry</button>
 
   <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-    <label style="font-weight:700;color:var(--muted);">Filter</label>
+    <label>Filter</label>
     <select id="monthFilter"><option value="all">All</option></select>
     <button class="btn small-btn" id="clearFilter">Clear</button>
     <button class="btn small-btn" id="toggleGraph">Show Graphs</button>
@@ -253,7 +239,7 @@ tbody td{
   <div id="reportContent"><strong>No data yet.</strong></div>
 </div>
 
-<!-- GRAPH SECTION -->
+<!-- GRAPH -->
 <div class="graph-panel" id="graphPanel">
 
   <div class="tabs">
@@ -269,7 +255,6 @@ tbody td{
   <div class="chart-container">
     <canvas id="chartCanvas"></canvas>
   </div>
-
 </div>
 
 </div>
@@ -305,11 +290,28 @@ tbody td{
 </div>
 
 <script>
-/* DATA STORAGE */
-const LS_KEY = 'spendData_v1';
+/* ---------------- DATA ---------------- */
+const LS_KEY = "spendData_v1";
 let data = JSON.parse(localStorage.getItem(LS_KEY)) || [];
 
-/* DOM ELEMENTS */
+function saveData(){ localStorage.setItem(LS_KEY, JSON.stringify(data)); }
+
+/* ----------- Date format: DD-MM-YYYY ---------- */
+function formatDisplayDate(d){
+  const dt = new Date(d);
+  const dd = String(dt.getDate()).padStart(2,'0');
+  const mm = String(dt.getMonth()+1).padStart(2,'0');
+  const yyyy = dt.getFullYear();
+  return `${dd}-${mm}-${yyyy}`;
+}
+
+/* ---------------- Sort by date (newest first) ---------------- */
+function sortDataByDate(){
+  data.sort((a,b)=> new Date(b.date) - new Date(a.date));
+  saveData();
+}
+
+/* ---------------- DOM ---------------- */
 const tableBody = document.getElementById("tableBody");
 const addBtn = document.getElementById("addBtn");
 const dateInput = document.getElementById("dateInput");
@@ -335,43 +337,41 @@ const saveEdit = document.getElementById("saveEdit");
 const cancelEdit = document.getElementById("cancelEdit");
 
 let editingIndex = null;
-let activeTab = "monthly";
 let currentFilter = "all";
+let activeTab = "monthly";
 let chart = null;
 
-/* HELPERS */
-function saveData(){
-  localStorage.setItem(LS_KEY, JSON.stringify(data));
+/* ------------- Month Filter ------------- */
+function monthKey(d){
+  const dt = new Date(d);
+  return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`;
 }
-function fmt(n){ return Number(n).toLocaleString(); }
-function monthKey(date){ const d=new Date(date); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; }
-
-/* FILTER DROPDOWN */
 function refreshMonthFilter(){
-  const months=new Set(data.map(x=>monthKey(x.date)));
-  const sorted=[...months].sort((a,b)=>b.localeCompare(a));
-  monthFilter.innerHTML='<option value=\"all\">All</option>';
-  sorted.forEach(m=>{
-    const [y,mo]=m.split('-');
-    const name=new Date(y,mo-1).toLocaleString(undefined,{month:'short'});
-    const opt=document.createElement('option');
-    opt.value=m;
-    opt.textContent=`${y} - ${name}`;
+  const months = new Set(data.map(x=>monthKey(x.date)));
+  monthFilter.innerHTML = `<option value="all">All</option>`;
+  [...months].sort().reverse().forEach(m=>{
+    const [y,mo] = m.split("-");
+    const txt = `${y} - ${new Date(y,mo-1).toLocaleString(undefined,{month:"short"})}`;
+    const opt = document.createElement("option");
+    opt.value = m; opt.textContent = txt;
     monthFilter.appendChild(opt);
   });
 }
 
-/* RENDER TABLE */
+/* ------------- Filtering ------------- */
 function getFiltered(){
-  return currentFilter==="all"? data : data.filter(x=>monthKey(x.date)===currentFilter);
+  return currentFilter==="all" ? data : data.filter(x=>monthKey(x.date)===currentFilter);
 }
+
+/* ------------- Render Table ------------- */
+function fmt(n){ return Number(n).toLocaleString(); }
 
 function renderTable(){
   const rows=getFiltered();
-  tableBody.innerHTML='';
+  tableBody.innerHTML="";
 
   if(rows.length===0){
-    tableBody.innerHTML='<tr><td colspan=\"6\" style=\"padding:20px;\">No entries</td></tr>';
+    tableBody.innerHTML="<tr><td colspan='6' style='padding:20px;'>No entries</td></tr>";
     updateReport();
     return;
   }
@@ -379,14 +379,14 @@ function renderTable(){
   rows.forEach(item=>{
     const idx=data.indexOf(item);
     const total=item.credit-item.debit;
-    const totalClass =
-      total>0 ? "total-positive" :
-      total<0 ? "total-negative" :
-      "total-zero";
 
-    const tr=document.createElement('tr');
+    const totalClass = total>0 ? "total-positive" :
+                       total<0 ? "total-negative" :
+                                 "total-zero";
+
+    const tr=document.createElement("tr");
     tr.innerHTML=`
-      <td>${item.date}</td>
+      <td>${formatDisplayDate(item.date)}</td>
       <td style="text-align:left;padding-left:12px;">${item.product}</td>
       <td class="credit">+ ₹${fmt(item.credit)}</td>
       <td class="debit">- ₹${fmt(item.debit)}</td>
@@ -402,42 +402,38 @@ function renderTable(){
   updateReport();
 }
 
-/* REPORT */
+/* ------------- Report ------------- */
 function updateReport(){
   const rows=getFiltered();
   if(rows.length===0){
-    reportContent.innerHTML='<strong>No data yet.</strong>';
+    reportContent.innerHTML="<strong>No data yet.</strong>";
     return;
   }
 
-  const totalCredit = rows.reduce((s,r)=>s+Number(r.credit),0);
-  const totalDebit = rows.reduce((s,r)=>s+Number(r.debit),0);
-  const net = totalCredit-totalDebit;
+  const totalCredit = rows.reduce((s,r)=>s+r.credit,0);
+  const totalDebit  = rows.reduce((s,r)=>s+r.debit,0);
+  const net = totalCredit - totalDebit;
 
   reportContent.innerHTML = `
-    <strong>Total Credit:</strong> 
-    <span style="color:var(--green)">₹${fmt(totalCredit)}</span>
+    <strong>Total Credit:</strong> <span style="color:var(--green)">₹${fmt(totalCredit)}</span>
     &nbsp; | &nbsp;
-
-    <strong>Total Debit:</strong> 
-    <span style="color:var(--red)">₹${fmt(totalDebit)}</span>
+    <strong>Total Debit:</strong> <span style="color:var(--red)">₹${fmt(totalDebit)}</span>
     &nbsp; | &nbsp;
-
-    <strong>Net Savings:</strong> 
-    <span style="color:var(--green)">₹${fmt(net)}</span>
+    <strong>Net Savings:</strong> <span style="color:var(--green)">₹${fmt(net)}</span>
   `;
 }
 
-/* ADD ENTRY */
-addBtn.addEventListener('click',e=>{
+/* ------------- Add Entry ------------- */
+addBtn.addEventListener("click",e=>{
   e.preventDefault();
 
   const d = dateInput.value || new Date().toISOString().slice(0,10);
   const p = productInput.value.trim() || "—";
-  const c = Number(creditInput.value||0);
-  const db = Number(debitInput.value||0);
+  const c = Number(creditInput.value);
+  const db = Number(debitInput.value);
 
-  data.push({date:d,product:p,credit:c,debit:db});
+  data.push({date:d, product:p, credit:c, debit:db});
+  sortDataByDate();
   saveData();
 
   dateInput.value=""; productInput.value=""; creditInput.value=0; debitInput.value=0;
@@ -448,7 +444,7 @@ addBtn.addEventListener('click',e=>{
   updateChartIfVisible();
 });
 
-/* EDIT / DELETE */
+/* ------------- Edit/Delete ------------- */
 tableBody.addEventListener("click",ev=>{
   const btn = ev.target.closest("button");
   if(!btn) return;
@@ -457,53 +453,64 @@ tableBody.addEventListener("click",ev=>{
   if(btn.dataset.action==="delete"){
     if(!confirm("Delete this entry?")) return;
     data.splice(idx,1);
+    sortDataByDate();
     saveData();
-    refreshMonthFilter(); renderTable(); populateGraphYears(); updateChartIfVisible();
+    refreshMonthFilter();
+    renderTable();
+    populateGraphYears();
+    updateChartIfVisible();
   }
+
   else if(btn.dataset.action==="edit"){
-    editingIndex=idx;
-    const it=data[idx];
-    editDate.value=it.date;
-    editProduct.value=it.product;
-    editCredit.value=it.credit;
-    editDebit.value=it.debit;
+    editingIndex = idx;
+    const it = data[idx];
+    editDate.value = it.date;
+    editProduct.value = it.product;
+    editCredit.value = it.credit;
+    editDebit.value = it.debit;
     modalBackdrop.style.display="flex";
   }
 });
 
-/* MODAL */
+/* Modal Buttons */
 cancelEdit.addEventListener("click",()=>{
   modalBackdrop.style.display="none";
   editingIndex=null;
 });
-
 saveEdit.addEventListener("click",()=>{
-  const d=editDate.value;
-  const p=editProduct.value.trim();
-  const c=Number(editCredit.value);
-  const db=Number(editDebit.value);
+  const d = editDate.value;
+  const p = editProduct.value.trim();
+  const c = Number(editCredit.value);
+  const db = Number(editDebit.value);
 
-  data[editingIndex]={date:d,product:p,credit:c,debit:db};
+  data[editingIndex] = {date:d, product:p, credit:c, debit:db};
+  sortDataByDate();
   saveData();
 
   modalBackdrop.style.display="none";
   editingIndex=null;
-
-  refreshMonthFilter(); renderTable(); populateGraphYears(); updateChartIfVisible();
+  refreshMonthFilter();
+  renderTable();
+  populateGraphYears();
+  updateChartIfVisible();
 });
 
-/* FILTER */
+/* ------------- Filter buttons ------------- */
 monthFilter.addEventListener("change",()=>{
   currentFilter=monthFilter.value;
-  renderTable(); updateChartIfVisible();
+  renderTable();
+  updateChartIfVisible();
 });
 clearFilter.addEventListener("click",()=>{
   monthFilter.value="all";
   currentFilter="all";
-  renderTable(); updateChartIfVisible();
+  renderTable();
+  updateChartIfVisible();
 });
 
-/* GRAPH */
+/* ------------- Graph System ------------- */
+let chartInstance = null;
+
 toggleGraph.addEventListener("click",()=>{
   if(graphPanel.style.display==="none"||graphPanel.style.display===""){
     graphPanel.style.display="block";
@@ -515,48 +522,48 @@ toggleGraph.addEventListener("click",()=>{
   }
 });
 
-tabMonthly.addEventListener("click",()=>{ setTab("monthly"); });
-tabYearly.addEventListener("click",()=>{ setTab("yearly"); });
+tabMonthly.addEventListener("click",()=>setActiveTab("monthly"));
+tabYearly.addEventListener("click",()=>setActiveTab("yearly"));
 
-function setTab(t){
+function setActiveTab(t){
   activeTab=t;
   tabMonthly.classList.toggle("active",t==="monthly");
   tabYearly.classList.toggle("active",t==="yearly");
   updateChart();
 }
 
-/* YEAR DROPDOWN */
-function populateGraphYears(){
-  const years=new Set(data.map(x=>new Date(x.date).getFullYear()));
-  const sorted=[...years].sort((a,b)=>b-a);
+graphYearSelect.addEventListener("change",()=>{ if(activeTab==="monthly") updateChart(); });
 
+function populateGraphYears(){
+  const years = [...new Set(data.map(x=>new Date(x.date).getFullYear()))].sort().reverse();
   graphYearSelect.innerHTML="";
-  sorted.forEach(y=>{
+  years.forEach(y=>{
     const opt=document.createElement("option");
     opt.value=y;
     opt.textContent=y;
     graphYearSelect.appendChild(opt);
   });
 }
-graphYearSelect.addEventListener("change",()=>{ if(activeTab==="monthly") updateChart(); });
 
-/* AGGREGATE */
+/* Aggregation */
 function aggMonthly(year){
   const credit=Array(12).fill(0);
   const debit=Array(12).fill(0);
 
   data.forEach(x=>{
-    const d=new Date(x.date);
-    if(d.getFullYear()===Number(year)){
-      const m=d.getMonth();
-      credit[m]+=Number(x.credit);
-      debit[m]+=Number(x.debit);
+    const dt=new Date(x.date);
+    if(dt.getFullYear()===Number(year)){
+      const m=dt.getMonth();
+      credit[m]+=x.credit;
+      debit[m]+=x.debit;
     }
   });
 
   return {
-    labels:[...Array(12)].map((_,i)=>new Date(year,i).toLocaleString(undefined,{month:'short'})),
-    credit,debit,balance:credit.map((c,i)=>c-debit[i])
+    labels: [...Array(12)].map((_,i)=>new Date(year,i).toLocaleString(undefined,{month:"short"})),
+    credit,
+    debit,
+    balance:credit.map((c,i)=>c-debit[i])
   };
 }
 
@@ -565,12 +572,10 @@ function aggYearly(){
   data.forEach(x=>{
     const y=new Date(x.date).getFullYear();
     if(!map[y]) map[y]={credit:0,debit:0};
-    map[y].credit+=Number(x.credit);
-    map[y].debit+=Number(x.debit);
+    map[y].credit+=x.credit;
+    map[y].debit+=x.debit;
   });
-
-  const years=Object.keys(map).map(Number).sort((a,b)=>a-b);
-
+  const years=Object.keys(map).map(Number).sort();
   return {
     labels:years,
     credit:years.map(y=>map[y].credit),
@@ -579,26 +584,24 @@ function aggYearly(){
   };
 }
 
-/* CHART */
+/* Update Chart */
 function updateChart(){
   if(!chart){
-    chart=new Chart(chartCanvas.getContext("2d"),{
+    chart = new Chart(chartCanvas.getContext("2d"),{
       type:"line",
       data:{},
       options:{
         responsive:true,
         maintainAspectRatio:false,
-        interaction:{mode:"index",intersect:false},
         scales:{y:{beginAtZero:true}}
       }
     });
   }
 
   if(activeTab==="monthly"){
-    const year=Number(graphYearSelect.value);
-    const ag=aggMonthly(year);
-
-    chart.data={
+    const year = Number(graphYearSelect.value);
+    const ag = aggMonthly(year);
+    chart.data = {
       labels:ag.labels,
       datasets:[
         {label:"Credit",data:ag.credit,borderColor:"#16a34a",backgroundColor:"rgba(22,163,74,0.1)",fill:true},
@@ -606,10 +609,9 @@ function updateChart(){
         {label:"Balance",data:ag.balance,borderColor:"#2563eb"}
       ]
     };
-  }
-  else{
-    const ag=aggYearly();
-    chart.data={
+  } else {
+    const ag = aggYearly();
+    chart.data = {
       labels:ag.labels,
       datasets:[
         {label:"Credit",data:ag.credit,borderColor:"#16a34a",backgroundColor:"rgba(22,163,74,0.1)",fill:true},
@@ -627,6 +629,7 @@ function updateChartIfVisible(){
 }
 
 /* INIT */
+sortDataByDate();
 refreshMonthFilter();
 renderTable();
 populateGraphYears();
