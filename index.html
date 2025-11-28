@@ -424,19 +424,38 @@ function updateReport(){
 }
 
 /* ------------- Add Entry ------------- */
-addBtn.addEventListener("click",e=>{
+addBtn.addEventListener("click", e => {
   e.preventDefault();
-
-  const d = dateInput.value || new Date().toISOString().slice(0,10);
-  const p = productInput.value.trim() || "—";
+  const d = dateInput.value.trim();
+  const p = productInput.value.trim();
   const c = Number(creditInput.value);
   const db = Number(debitInput.value);
 
-  data.push({date:d, product:p, credit:c, debit:db});
+  // VALIDATION — Prevent empty / invalid entry
+  if (!d) {
+    alert("Please select a date.");
+    return;
+  }
+  if (!p) {
+    alert("Please enter a product name.");
+    return;
+  }
+  if ((c === 0 || isNaN(c)) && (db === 0 || isNaN(db))) {
+    alert("Please enter a Credit or Debit amount.");
+    return;
+  }
+
+  // ADD ENTRY
+  data.push({ date: d, product: p, credit: c, debit: db });
+
   sortDataByDate();
   saveData();
 
-  dateInput.value=""; productInput.value=""; creditInput.value=0; debitInput.value=0;
+  // Reset fields
+  dateInput.value = "";
+  productInput.value = "";
+  creditInput.value = 0;
+  debitInput.value = 0;
 
   refreshMonthFilter();
   renderTable();
